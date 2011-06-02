@@ -1,28 +1,52 @@
 #!/usr/bin/env python
-
+# Version: v1.2
+# Credits: Based upon work originally by Matt Ryall (Atlassian)
+#          now maintained by github.com/ghuntley/
+#
 from __future__ import with_statement
-import sys, string, xmlrpclib, re, os
+import sys, string, xmlrpclib, re, os, ConfigParser, commands
 
-if len(sys.argv) < 5:
-    exit("Usage: " + sys.argv[0] + " spacekey pagetitle contentType filename");
+configrc = os.path.expanduser('~/.wikiuploadrc');
+config = ConfigParser.RawConfigParser()
+
+if not os.path.exists(configrc):
+    config.add_section('config')
+    config.set('config', 'url', 'https://confluence.example.com/rpc/xmlrpc')
+    config.set('config', 'username', 'username')
+    config.set('config', 'password', 'password')
+
+    with open(configrc, 'wb') as configfile:
+        config.write(configfile)
+
+    exit("""
+    Configuration file (~/.wikiuploadrc) missing, I'm going to assume that this is a first time install
+    and generate a new one. Please update this configuration file with your username, password and 
+    the address to your confluence install.
+    """);
+
+if len(sys.argv) < 4:
+    exit("Usage: " + sys.argv[0] + " spacekey pagetitle filename");
+ 
+config.read(configrc);
+url = config.get('config','url');
+username = config.get('config','username');
+password = config.get('config','password');
 
 spacekey = sys.argv[1];
 pagetitle = sys.argv[2];
-contentType = sys.argv[3];
-filename = sys.argv[4];
-
+filename = sys.argv[3];
+ 
 with open(filename, 'rb') as f:
     data = f.read(); # slurp all the data
-
-server = xmlrpclib.ServerProxy('http://internal.example.com/confluence/rpc/xmlrpc');
-token = server.confluence1.login('username', 'secret');
-page = server.confluence1.getPage(token, spacekey, pagetitle);
-if page is None:
-    exit("Could not find page " + spacekey + ":" + pagetitle);
-
-attachment = {};
-attachment['fileName'] = os.path.basename(filename);
-attachment['contentType'] = contentType;
-
-server.confluence1.addAttachment(token, page['id'], attachment, xmlrpclib.Binary(data));
-
+ 
+    server = xmlrpclib.ServerProxy(url);
+    token = server.confluence1.login(username, password);
+    page = server.confluence1.getPage(token, spacekey, pagetitle);
+    if page is None:
+        exit("Could not find page " + spacekey + ":" + pagetitle);
+ 
+    attachment = {};
+    attachment['fileName'] = os.path.basename(filename);
+    attachment['contentType'] = commands.getstatusoutput('file -b --mime-type ' + attachment['fileName'])[1];
+ 
+    server.confluence1.addAttachment(token, page['id'], attachment, xmlrpclib.Binary(data));
