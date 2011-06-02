@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+from __future__ import with_statement
+import sys, string, xmlrpclib, re, os
+
+if len(sys.argv) < 5:
+    exit("Usage: " + sys.argv[0] + " spacekey pagetitle contentType filename");
+
+spacekey = sys.argv[1];
+pagetitle = sys.argv[2];
+contentType = sys.argv[3];
+filename = sys.argv[4];
+
+with open(filename, 'rb') as f:
+    data = f.read(); # slurp all the data
+
+server = xmlrpclib.ServerProxy('http://internal.example.com/confluence/rpc/xmlrpc');
+token = server.confluence1.login('username', 'secret');
+page = server.confluence1.getPage(token, spacekey, pagetitle);
+if page is None:
+    exit("Could not find page " + spacekey + ":" + pagetitle);
+
+attachment = {};
+attachment['fileName'] = os.path.basename(filename);
+attachment['contentType'] = contentType;
+
+server.confluence1.addAttachment(token, page['id'], attachment, xmlrpclib.Binary(data));
+
