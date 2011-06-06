@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+# Version: v1.0
+# github.com/ghuntley/
+#
+from __future__ import with_statement
+import sys, string, xmlrpclib, re, os, ConfigParser, commands, htmllib
+
+configrc = os.path.expanduser('~/.confluencerc');
+config = ConfigParser.RawConfigParser()
+
+if not os.path.exists(configrc):
+    config.add_section('config')
+    config.set('config', 'url', 'https://confluence.example.com/rpc/xmlrpc')
+    config.set('config', 'username', 'username')
+    config.set('config', 'password', 'password')
+
+    with open(configrc, 'wb') as configfile:
+        config.write(configfile)
+
+    exit("""
+    Configuration file (~/.wikiuploadrc) missing, I'm going to assume that this is a first time install
+    and generate a new one. Please update this configuration file with your username, password and 
+    the address to your confluence install.
+    """);
+
+if len(sys.argv) < 3:
+    exit("Usage: " + sys.argv[0] + " spacekey pagetitle");
+ 
+config.read(configrc);
+url = config.get('config','url');
+username = config.get('config','username');
+password = config.get('config','password');
+
+spacekey = sys.argv[1];
+pagetitle = sys.argv[2];
+
+content = sys.stdin.read();
+
+server = xmlrpclib.ServerProxy(url);
+token = server.confluence1.login(username, password);
+page = server.confluence1.getPage(token, spacekey, pagetitle);
+
+if page is None:
+    #newpagedata = {"title":"New Page","content":"new content","space":"spaceKey"}
+    #newpage = s.confluence1.storePage(token, newpagedata);
+    exit("Could not find page " + spacekey + ":" + pagetitle);
+
+page["content"] = "{code}" + content + "{code}";
+
+server.confluence1.storePage(token,page)
