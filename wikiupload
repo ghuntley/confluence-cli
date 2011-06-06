@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-# Version: v1.2
+# Version: v1.3
 # Credits: Based upon work originally by Matt Ryall (Atlassian)
 #          now maintained by github.com/ghuntley/
 #
 from __future__ import with_statement
 import sys, string, xmlrpclib, re, os, ConfigParser, commands
 
-configrc = os.path.expanduser('~/.wikiuploadrc');
+configrc = os.path.expanduser('~/.confluencerc');
 config = ConfigParser.RawConfigParser()
 
 if not os.path.exists(configrc):
