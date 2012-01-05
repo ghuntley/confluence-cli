@@ -46,6 +46,6 @@ if page is None:
     #newpage = s.confluence2.storePage(token, newpagedata);
     exit("Could not find page " + spacekey + ":" + pagetitle);
 
-page["content"] = "{code}" + content + "{code}";
+page["content"] = content;
 
 server.confluence2.storePage(token,page)
