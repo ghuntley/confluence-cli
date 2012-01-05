@@ -38,14 +38,14 @@ pagetitle = sys.argv[2];
 content = sys.stdin.read();
 
 server = xmlrpclib.ServerProxy(url);
-token = server.confluence1.login(username, password);
-page = server.confluence1.getPage(token, spacekey, pagetitle);
+token = server.confluence2.login(username, password);
+page = server.confluence2.getPage(token, spacekey, pagetitle);
 
 if page is None:
     #newpagedata = {"title":"New Page","content":"new content","space":"spaceKey"}
-    #newpage = s.confluence1.storePage(token, newpagedata);
+    #newpage = s.confluence2.storePage(token, newpagedata);
     exit("Could not find page " + spacekey + ":" + pagetitle);
 
 page["content"] = "{code}" + content + "{code}";
 
-server.confluence1.storePage(token,page)
+server.confluence2.storePage(token,page)
