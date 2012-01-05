@@ -1,32 +1,43 @@
 #!/usr/bin/env python
-# Version: v1.3
+# Version: v1.4
 # Credits: Based upon work originally by Matt Ryall (Atlassian)
 #          now maintained by github.com/ghuntley/
-#
+
 from __future__ import with_statement
 import sys, string, xmlrpclib, re, os, ConfigParser, commands
 
-configrc = os.path.expanduser('~/.confluencerc');
-config = ConfigParser.RawConfigParser()
+## Stuff TODO:
+##      - command line options instead of config file as an alternative
+##      - command line options to specify the config file
+##      - merge two scripts into one and specify sub-command as an argument
+##      - API version handling (see below)
+
+configfn = '~/.confluencerc';
+configrc = os.path.expanduser(configfn);
+config = ConfigParser.RawConfigParser();
 
 if not os.path.exists(configrc):
-    config.add_section('config')
-    config.set('config', 'url', 'https://confluence.example.com/rpc/xmlrpc')
-    config.set('config', 'username', 'username')
-    config.set('config', 'password', 'password')
+    config.add_section('config');
+    config.set('config', 'url', 'https://confluence.example.com/rpc/xmlrpc');
+    config.set('config', 'username', 'username');
+    config.set('config', 'password', 'password');
 
     with open(configrc, 'wb') as configfile:
-        config.write(configfile)
+        config.write(configfile);
 
     exit("""
-    Configuration file (~/.wikiuploadrc) missing, I'm going to assume that this is a first time install
-    and generate a new one. Please update this configuration file with your username, password and 
-    the address to your confluence install.
+    Configuration file ("""+configfn+""") missing, I'm going to assume
+    that this is a first time install and will generate a blank one.
+    Please update this configuration file with your username, password
+    and the URL of confluence wiki service you wish to use.
+
+    NOTE: do not quoute the password and/or username in the config file.
+    The leading space after '=' will be ignored.
     """);
 
 if len(sys.argv) < 4:
     exit("Usage: " + sys.argv[0] + " spacekey pagetitle filename");
- 
+
 config.read(configrc);
 url = config.get('config','url');
 username = config.get('config','username');
@@ -35,18 +46,21 @@ password = config.get('config','password');
 spacekey = sys.argv[1];
 pagetitle = sys.argv[2];
 filename = sys.argv[3];
- 
+
 with open(filename, 'rb') as f:
     data = f.read(); # slurp all the data
- 
+
     server = xmlrpclib.ServerProxy(url);
-    token = server.confluence1.login(username, password);
-    page = server.confluence1.getPage(token, spacekey, pagetitle);
+    ## XXX: should we:
+    ##      - figure out what version of API the server is using (how?)
+    ##      - put this in the config file (least favourable)
+    token = server.confluence2.login(username, password);
+    page = server.confluence2.getPage(token, spacekey, pagetitle);
     if page is None:
         exit("Could not find page " + spacekey + ":" + pagetitle);
- 
+
     attachment = {};
     attachment['fileName'] = os.path.basename(filename);
     attachment['contentType'] = commands.getstatusoutput('file -b --mime-type ' + attachment['fileName'])[1];
- 
-    server.confluence1.addAttachment(token, page['id'], attachment, xmlrpclib.Binary(data));
+
+    server.confluence2.addAttachment(token, page['id'], attachment, xmlrpclib.Binary(data));
