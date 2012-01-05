@@ -5,27 +5,28 @@
 from __future__ import with_statement
 import sys, string, xmlrpclib, re, os, ConfigParser, commands, htmllib
 
-configrc = os.path.expanduser('~/.confluencerc');
-config = ConfigParser.RawConfigParser()
+configfn = '~/.confluencerc';
+configrc = os.path.expanduser(configfn);
+config = ConfigParser.RawConfigParser();
 
 if not os.path.exists(configrc):
-    config.add_section('config')
-    config.set('config', 'url', 'https://confluence.example.com/rpc/xmlrpc')
-    config.set('config', 'username', 'username')
-    config.set('config', 'password', 'password')
+    config.add_section('config');
+    config.set('config', 'url', 'https://confluence.example.com/rpc/xmlrpc');
+    config.set('config', 'username', 'username');
+    config.set('config', 'password', 'password');
 
     with open(configrc, 'wb') as configfile:
-        config.write(configfile)
+        config.write(configfile);
 
     exit("""
-    Configuration file (~/.wikiuploadrc) missing, I'm going to assume that this is a first time install
-    and generate a new one. Please update this configuration file with your username, password and 
+    Configuration file ("""+configfn+""") missing, I'm going to assume that this is a first time install
+    and generate a new one. Please update this configuration file with your username, password and
     the address to your confluence install.
     """);
 
 if len(sys.argv) < 3:
     exit("Usage: " + sys.argv[0] + " spacekey pagetitle");
- 
+
 config.read(configrc);
 url = config.get('config','url');
 username = config.get('config','username');
